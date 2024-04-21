@@ -1,0 +1,57 @@
+---
+title: "Data 301 Final Project"
+author: "Adrian Parenteau"
+date: "2024-04-09"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(ggplot2)
+library(nlme)
+library(multcomp)
+```
+
+```{r}
+#Variable Transformation
+
+newwaste<-Wastedata1%>%
+gather(key = "customertype", value = "weight",`Res Tons`,`CII Tons`)
+
+newwaste  
+
+```
+
+```{r}
+#Test one: Independent T-test
+
+t.test(weight~customertype, data = newwaste, alternative="greater")
+
+#Graph
+newwaste %>%
+group_by(customertype)%>%
+summarize(avef=mean(weight), sef=sd(weight)/sqrt(length(weight)), tstar=qt(1-0.05/2, length(weight)-1))%>%
+ggplot(aes(x=customertype, y=avef))+geom_point()+geom_errorbar(aes(ymin=avef-sef*tstar,ymax=avef+sef*tstar))+ylim(c(0,600))
+```
+
+```{r}
+#Test Two: Two-way ANOVA
+
+#Filtering out all but three most populous Counties
+newwaste2 <- newwaste %>% filter(County == c("Ramsey", "Hennipen", "Dakota"))
+
+#Test
+model3<- aov(weight~County+Category+County*Category, data=newwaste2)
+
+summary(model3)
+
+#Plot
+interaction.plot(newwaste2$County,newwaste2$Category,newwaste2$weight, fun=mean, col = 1:7) 
+```
+
+
+
